@@ -9,7 +9,7 @@ import (
 type HelloService struct {
 }
 
-func (h *HelloService) SayHello(ctx context.Context, message *pb.HelloMessage) (*pb.HelloResponse, error) {
+func (h *HelloService) Hello(ctx context.Context, message *pb.HelloMessage) (*pb.HelloResponse, error) {
 	helloMessage := "Hello " + message.GetMessage()
 
 	response := pb.HelloResponse{Result: helloMessage}

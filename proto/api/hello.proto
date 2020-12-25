@@ -9,7 +9,7 @@ option java_outer_classname = "HelloGrpc";
 import "google/api/annotations.proto";
 
 service HelloService{
-  rpc SayHello(HelloMessage) returns (HelloResponse){
+  rpc Hello(HelloMessage) returns (HelloResponse){
     option (google.api.http) = {
       get: "/hello"
     };
