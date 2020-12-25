@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package io.github.helloworlde;
+option go_package = "github.com/helloworlde/grpc-gateway;grpc_gateway";
+option java_package = "io.github.helloworlde";
+option java_multiple_files = true;
+option java_outer_classname = "HelloGrpc";
+
+import "google/api/annotations.proto";
+
+service HelloService{
+  rpc SayHello(HelloMessage) returns (HelloResponse){
+    option (google.api.http) = {
+      get: "/hello"
+    };
+  }
+}
+
+message HelloMessage {
+  string message = 1;
+}
+
+message HelloResponse {
+  string result = 1;
+}
+
