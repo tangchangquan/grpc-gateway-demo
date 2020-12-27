@@ -99,23 +99,24 @@ buf generate
 
 - 实现接口
 
-```go
+```
 import (
-"context"
+    "context"
 
-pb "github.com/helloworlde/grpc-gateway/proto/api"
+    pb "github.com/helloworlde/grpc-gateway/proto/api"
 )
 
 type HelloService struct {
 }
 
 func (h *HelloService) Hello(ctx context.Context, message *pb.HelloMessage) (*pb.HelloResponse, error) {
-helloMessage := "Hello " + message.GetMessage()
+	helloMessage := "Hello " + message.GetMessage()
 
-response := pb.HelloResponse{Result: helloMessage}
+	response := pb.HelloResponse{Result: helloMessage}
 
-return &response, nil
+	return &response, nil
 }
+
 ```
 
 - 启动 Server
@@ -124,25 +125,26 @@ return &response, nil
 var helloService = service.HelloService{}
 
 func StartGrpcServer() {
-listener, err := net.Listen("tcp", ":9090")
-if err != nil {
-log.Fatalln("Listen gRPC port failed: ", err)
-}
+	listener, err := net.Listen("tcp", ":9090")
+	if err != nil {
+		log.Fatalln("Listen gRPC port failed: ", err)
+	}
 
-server := grpc.NewServer()
-pb.RegisterHelloServiceServer(server, &helloService)
+	server := grpc.NewServer()
+	pb.RegisterHelloServiceServer(server, &helloService)
 
-log.Println("Start gRPC Server on 0.0.0.0:9090")
-err = server.Serve(listener)
-if err != nil {
-log.Fatalln("Start gRPC Server failed: ", err)
-}
+	log.Println("Start gRPC Server on 0.0.0.0:9090")
+	err = server.Serve(listener)
+	if err != nil {
+		log.Fatalln("Start gRPC Server failed: ", err)
+	}
+
 }
 ```
 
 ```go
 func main() {
-server.StartGrpcServer()
+    server.StartGrpcServer()
 }
 ```
 
