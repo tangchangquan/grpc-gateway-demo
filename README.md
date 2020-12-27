@@ -8,14 +8,14 @@ gRPC Gateway 可以代理 gRPC 服务，接收 HTTP 请求，并转为 gRPC 请�
 
 - 启动项目
 
-```shell
+```bash
 git clone https://github.com/helloworlde/grpc-gateway.git & cd grpc-gateway
 make all 
 ```
 
 - 访问
 
-```shell
+```bash
 curl localhost:8090/hello\?message=world
 
 {"result":"Hello world"}%
@@ -29,14 +29,14 @@ curl localhost:8090/hello\?message=world
 
 buf 用于代替 protoc 进行生成代码，可以避免使用复杂的 protoc 命令，避免 protoc 各种失败问题
 
-```shell
+```bash
 brew tap bufbuild/buf
 brew install buf
 ```
 
 - 安装 grpc-gateway
 
-```shell
+```bash
 go install \
     github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
     github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2
@@ -68,7 +68,7 @@ build:
 
 - 定义 proto
 
-```proto
+```protobuf
 syntax = "proto3";
 
 package io.github.helloworlde;
@@ -93,13 +93,13 @@ message HelloResponse {
 
 - 生成代码
 
-```shell
+```bash
 buf generate
 ```
 
 - 实现接口
 
-```
+```go
 import (
     "context"
 
@@ -122,8 +122,6 @@ func (h *HelloService) Hello(ctx context.Context, message *pb.HelloMessage) (*pb
 - 启动 Server
 
 ```go
-var helloService = service.HelloService{}
-
 func StartGrpcServer() {
 	listener, err := net.Listen("tcp", ":9090")
 	if err != nil {
@@ -144,7 +142,7 @@ func StartGrpcServer() {
 
 ```go
 func main() {
-    server.StartGrpcServer()
+  server.StartGrpcServer()
 }
 ```
 
@@ -154,10 +152,7 @@ func main() {
 
 - 添加 google.api 的 proto
 
-添加 [annotations.proto](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/annotations.proto)
-和 [http.proto](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/http.proto)
-文件到 `
-proto/google/api/`下；这两个文件用于支持 gRPC Gateway 代理
+添加 [annotations.proto](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/annotations.proto)和 [http.proto](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/http.proto)文件到 `proto/google/api/`下；这两个文件用于支持 gRPC Gateway 代理
 
 - 修改业务的 proto 文件
 
@@ -195,7 +190,7 @@ plugins:
 
 会生成 `*.gw.go` 格式的文件，该文件是 gRPC Gateway 代理具体服务的实现
 
-```shell
+```bash
 buf generete
 ```
 
@@ -238,7 +233,7 @@ func main() {
 
 - 启动应用
 
-```shell
+```bash
 curl localhost:8090/hello\?message=world
 
 {"result":"Hello world"}%
