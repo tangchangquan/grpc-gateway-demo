@@ -1,5 +1,8 @@
 # gRPC Gateway
 
+gRPC Gateway 可以代理 gRPC 服务，接收 HTTP 请求，并转为 gRPC 请求由服务进行处理，并将返回结果转换为 HTTP 响应发送给调用者 gRPC Gateway
+支持代理单个服务或者多个服务，当代理多个服务时，可以通过命名解析实现转发请求
+
 ## 快速使用
 
 - 启动项目
@@ -17,7 +20,7 @@ curl localhost:8090/hello\?message=world
 {"result":"Hello world"}%
 ```
 
-## 使用
+## 实现
 
 ### 安装依赖
 
@@ -38,18 +41,39 @@ go install \
     github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2
 ```
 
-### 修改代码
-
-- 添加 google.api 的 proto
-
-添加 [`annotations.proto`](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/annotations.proto)
-和 [
-http.proto`](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/http.proto) 文件到 `
-proto/google/api/`下；这两个文件用于支持 gRPC Gateway 代理
-
-- 修改业务的 proto 文件
+- 添加 buf 配置文件 buf.gen.yaml
 
 ```diff
+version: v1beta1
+plugins:
+  - name: go
+    out: proto
+    opt: paths=source_relative
+  - name: go-grpc
+    out: proto
+    opt: paths=source_relative,require_unimplemented_servers=false
+```
+
+- 添加配置文件 buf.yaml
+
+```yaml
+version: v1beta1
+build:
+  roots:
+    - proto
+```
+
+- 生成代码
+
+```shell
+buf generate
+```
+
+### 实现服务端
+
+- 定义 proto
+
+```proto
 syntax = "proto3";
 
 package io.github.helloworlde;
@@ -58,13 +82,8 @@ option java_package = "io.github.helloworlde";
 option java_multiple_files = true;
 option java_outer_classname = "HelloGrpc";
 
-+import "google/api/annotations.proto";
-
 service HelloService{
   rpc Hello(HelloMessage) returns (HelloResponse){
-+    option (google.api.http) = {
-+      get: "/hello"
-+    };
   }
 }
 
@@ -77,11 +96,85 @@ message HelloResponse {
 }
 ```
 
-### 配置 Gateway
+- 实现接口
 
-- 添加 buf 配置文件 buf.gen.yaml
+```go
+import (
+	"context"
 
-```yaml
+	pb "github.com/helloworlde/grpc-gateway/proto/api"
+)
+
+type HelloService struct {
+}
+
+func (h *HelloService) Hello(ctx context.Context, message *pb.HelloMessage) (*pb.HelloResponse, error) {
+	helloMessage := "Hello " + message.GetMessage()
+
+	response := pb.HelloResponse{Result: helloMessage}
+
+	return &response, nil
+}
+```
+
+- 启动 Server
+
+```go
+var helloService = service.HelloService{}
+
+func StartGrpcServer() {
+	listener, err := net.Listen("tcp", ":9090")
+	if err != nil {
+		log.Fatalln("Listen gRPC port failed: ", err)
+	}
+
+	server := grpc.NewServer()
+	pb.RegisterHelloServiceServer(server, &helloService)
+
+	log.Println("Start gRPC Server on 0.0.0.0:9090")
+	err = server.Serve(listener)
+	if err != nil {
+		log.Fatalln("Start gRPC Server failed: ", err)
+	}
+}
+```
+
+```go
+func main() {
+	server.StartGrpcServer()
+}
+```
+
+启动 Server 后，会监听 8090 端口，对外提供服务
+
+### 实现 Gateway
+
+- 添加 google.api 的 proto
+
+添加 [`annotations.proto`](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/annotations.proto)
+和 [
+http.proto`](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/third_party/googleapis/google/api/http.proto) 文件到 `
+proto/google/api/`下；这两个文件用于支持 gRPC Gateway 代理
+
+- 修改业务的 proto 文件
+
+```diff
+
++import "google/api/annotations.proto";
+
+service HelloService{
+  rpc Hello(HelloMessage) returns (HelloResponse){
++    option (google.api.http) = {
++      get: "/hello"
++    };
+  }
+}
+
+```
+
+- 修改 buf.gen.yaml，添加生成 Gateway 代码
+
+```diff
 version: v1beta1
 plugins:
   - name: go
@@ -90,18 +183,9 @@ plugins:
   - name: go-grpc
     out: proto
     opt: paths=source_relative,require_unimplemented_servers=false
-  - name: grpc-gateway
-    out: proto
-    opt: paths=source_relative
-```
-
-- 添加配置文件 buf.yaml
-
-```yaml
-version: v1beta1
-build:
-  roots:
-    - proto
++ - name: grpc-gateway
++   out: proto
++   opt: paths=source_relative
 ```
 
 - 生成 Gateway 的代码
@@ -112,7 +196,9 @@ build:
 buf generete
 ```
 
-- 添加 gRPC Gateway Proxy
+- 添加 gRPC Gateway 代理 Server
+
+启动 `0.0.0.0:9090` 就是要被代理的 Server 的地址
 
 ```go
 func StartGwServer() {
@@ -136,7 +222,24 @@ func StartGwServer() {
 }
 ```
 
-启动应用后即可访问相应的接口
+- 启动 Gateway
+
+```go
+func main() {
+	go server.StartGrpcServer()
+	server.StartGwServer()
+}
+```
+
+### 测试
+
+- 启动应用
+
+```shell
+curl localhost:8090/hello\?message=world
+
+{"result":"Hello world"}%
+```
 
 ## 参考文档
 
