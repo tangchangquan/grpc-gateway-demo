@@ -229,6 +229,42 @@ func main() {
 }
 ```
 
+
+#### 使用注册中心发现被代理的服务
+
+使用 [github.com/simplesurance/grpcconsulresolver/consul](github.com/simplesurance/grpcconsulresolver/consul) 作为 gRPC 服务发现的实现，解析 `server` 服务，当启动后就会自动从注册中心查找相关服务，根据负载均衡策略调用
+
+相关实现可以参考 [nameresolver](https://github.com/helloworlde/grpc-gateway/tree/nameresovler) 分支
+
+```diff
+import (
+	"context"
+	"log"
+	"net/http"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	pb "github.com/helloworlde/grpc-gateway/proto/api"
++   "github.com/simplesurance/grpcconsulresolver/consul"
+	"google.golang.org/grpc"
++   "google.golang.org/grpc/resolver"
+)
+
++func init() {
++	resolver.Register(consul.NewBuilder())
++}
+
+func StartGwServer() {
+	conn, err := grpc.DialContext(
+		context.Background(),
+-		"0.0.0.0:9090",
++		"consul://127.0.0.1:8500/server?health=healthy",
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+	)
+    // ....
+}	
+```
+
 ### 测试
 
 - 启动应用
