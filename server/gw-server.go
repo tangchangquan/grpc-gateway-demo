@@ -13,7 +13,7 @@ import (
 func StartGwServer() {
 	conn, err := grpc.DialContext(
 		context.Background(),
-		"0.0.0.0:9090",
+		"0.0.0.0:9090", //动态地址
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
 	)
