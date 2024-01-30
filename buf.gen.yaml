@@ -1,14 +1,19 @@
 version: v1
 plugins:
   - plugin: go
-    out: ../proto/api
+    out: proto/api
     opt:
       - paths=source_relative
   - plugin: go-grpc
-    out: ../proto/api
+    out: proto/api
     opt:
       - paths=source_relative
   - plugin: grpc-gateway
-    out: ../proto/api
+    out: proto/api
     opt:
       - paths=source_relative
+      - generate_unbound_methods=true
+  - plugin: openapiv2
+    out: doc
+    opt:
+      - logtostderr=true
